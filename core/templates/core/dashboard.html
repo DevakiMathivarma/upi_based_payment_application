@@ -69,6 +69,8 @@
         <button class="method-btn" data-provider="phonepe">PhonePe</button>
         <button class="method-btn" data-provider="bhim">BHIM</button>
       </div>
+              <p><strong>Link:</strong> <span id="showlink"></span></p>
+
       <div class="summary">
         <p><strong>To:</strong> <span id="summary_to"></span></p>
         <p><strong>Amount:</strong> ₹<span id="summary_amt"></span></p>
@@ -143,7 +145,7 @@ document.getElementById("scanQrBtn").addEventListener("click", () => {
   const summaryTo = document.getElementById('summary_to');
   const summaryAmt = document.getElementById('summary_amt');
   const methodButtons = document.querySelectorAll('.method-btn');
-
+const showlink = document.getElementById('showlink');
   const qrModal = document.getElementById('qrModal');
   const qrModalClose = document.getElementById('qrModalClose');
   const qrImg = document.getElementById('qrImg');
@@ -379,6 +381,8 @@ function buildPhonePeIntentUri({ pa, pn, amount, tn }) {
       try {
         if(provider === 'gpay'){
           const gpayIntent = buildGPayIntentUri({ pa: to, pn: name, amount, tn });
+              showlink.textContent=gpayIntent;
+
           window.location.href = gpayIntent;
           // fallback to generic UPI URI a bit later
           setTimeout(()=> { window.location.href = upiUri; }, 700);
