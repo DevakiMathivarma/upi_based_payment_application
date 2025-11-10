@@ -119,3 +119,11 @@ if REQUIRE_SECRETS and (not SECRET_KEY or SECRET_KEY == 'replace-me-with-a-secre
     raise RuntimeError('Missing SECRET_KEY in environment!')
 
 # End of settings.py
+import os
+
+_raw_allowed = os.getenv("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [h.strip() for h in _raw_allowed.split(",") if h.strip()]
+
+# fallback to localhost if none provided (optional)
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
