@@ -1,0 +1,410 @@
+.dashboard-wrap{ padding:18px 0; }
+.dash-top-cards{ display:flex; gap:14px; margin-bottom:18px; }
+.card.small{ flex:1; padding:18px; }
+.input{ width:100%; padding:10px; margin:6px 0; border-radius:8px; background:rgba(255,255,255,0.02); color:var(--text); border:1px solid rgba(255,255,255,0.03); }
+.txn-table{ width:100%; border-collapse:collapse; }
+.txn-table th, .txn-table td{ padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.03); }
+.modal{ position:fixed; left:0; top:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); z-index:2000; }
+.modal-inner{ width:900px; max-width:96%; padding:20px; position:relative; }
+.modal-close{ position:absolute; right:12px; top:8px; font-size:20px; background:none; border:0; color:var(--muted); }
+.method-btn{ display:block; width:100%; padding:12px; margin:10px 0; border-radius:8px; background:var(--glass); border:1px solid var(--glass-border); text-align:left; }
+.status-success{ color:var(--success); font-weight:700; }
+.status-pending{ color:var(--muted) }
+.status-failed{ color:var(--danger); font-weight:700;}
+/* ---------- Very small phones (320–374px) ---------- */
+@media (min-width: 320px) and (max-width: 374px) {
+  /* Layout: stack top cards vertically */
+  .dash-top-cards {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card.small {
+    flex: none;
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  /* Inputs / buttons: larger touch targets, full width */
+  .input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+  .btn, .method-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+  #scanQrBtn, #addMoneyBtn, #showQR {
+    width: 100%;
+  }
+
+  /* QR canvas sizing */
+  #qrContainer { margin-top: 12px; }
+  #upiQr { width: 160px !important; height: 160px !important; display: block; margin: 8px auto; }
+
+  /* Make modals mobile-friendly */
+  .modal {
+    align-items: flex-end; /* slide up from bottom feel */
+    padding: 8px;
+  }
+  .modal-inner {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    border-radius: 12px 12px 0 0;
+    max-height: 88vh;
+    overflow: auto;
+    box-sizing: border-box;
+  }
+  .modal-close {
+    right: 8px;
+    top: 6px;
+    font-size: 20px;
+  }
+
+  /* Payment grid -> stack vertically */
+  .payment-grid {
+    display: block;
+  }
+  .payment-grid .methods {
+    margin-bottom: 10px;
+  }
+  .summary { margin-top: 8px; }
+
+  /* Transactions table: make horizontally scrollable & compress spacing */
+  .txn-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 13px;
+  }
+  .txn-table thead, .txn-table tbody, .txn-table tr { display: table; width: 100%; table-layout: fixed; }
+  .txn-table th, .txn-table td {
+    padding: 8px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Minor typography and spacing */
+  .dashboard-wrap { padding: 12px 6px; }
+  .card { padding: 12px; margin-top: 12px; border-radius: 10px; }
+  .big { font-size: 18px; }
+  h3 { font-size: 16px; margin-bottom: 8px; }
+  .muted, .status-pending { font-size: 13px; }
+
+  /* Hide or simplify non-essential decoration if present */
+  .dash-top-cards .muted { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Ensure copy button fits */
+  #copyUpiBtn { padding: 10px; min-width: 72px; }
+
+  /* Ensure UPI text input remains readable */
+  #upiText {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+}
+/* ---------- Small phones (375px–424px) ---------- */
+@media (min-width: 374px) and (max-width: 424px) {
+  /* Stack dashboard cards vertically with slightly wider spacing */
+  .dash-top-cards {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card.small {
+    flex: none;
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  /* Inputs and buttons */
+  .input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .btn, .method-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  #scanQrBtn, #addMoneyBtn, #showQR {
+    width: 100%;
+  }
+
+  /* QR container and canvas sizing */
+  #qrContainer {
+    margin-top: 14px;
+  }
+  #upiQr {
+    width: 180px !important;
+    height: 180px !important;
+    display: block;
+    margin: 10px auto;
+  }
+
+  /* Modal adjustments for better readability */
+  .modal {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .modal-inner {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+    border-radius: 14px 14px 0 0;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .modal-close {
+    right: 10px;
+    top: 8px;
+    font-size: 22px;
+  }
+
+  /* Payment grid stacks vertically with mild spacing */
+  .payment-grid {
+    display: block;
+  }
+
+  .payment-grid .methods {
+    margin-bottom: 14px;
+  }
+
+  .summary {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  /* Transactions table scrollable horizontally */
+  .txn-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 14px;
+  }
+
+  .txn-table th,
+  .txn-table td {
+    padding: 8px 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Dashboard container & card spacing */
+  .dashboard-wrap {
+    padding: 14px 8px;
+  }
+
+  .card {
+    padding: 14px;
+    margin-top: 14px;
+    border-radius: 12px;
+  }
+
+  /* Text and labels */
+  .big {
+    font-size: 20px;
+  }
+
+  h3 {
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+
+  .muted,
+  .status-pending {
+    font-size: 14px;
+  }
+
+  /* Ensure inputs and copy button fit together in QR modal */
+  #upiText {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  #copyUpiBtn {
+    padding: 10px;
+    min-width: 80px;
+  }
+
+  /* Minor polish */
+  .method-btn {
+    text-align: center;
+    margin: 8px 0;
+  }
+}
+
+/* ---------- Regular phones (425px–599px) ---------- */
+@media (min-width: 424px) and (max-width: 599px) {
+  /* Layout: still stacked, but with wider card padding */
+  .dash-top-cards {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .card.small {
+    flex: none;
+    width: 100%;
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  /* Inputs and buttons */
+  .input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .btn, .method-btn {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  #scanQrBtn, #addMoneyBtn, #showQR {
+    width: 100%;
+  }
+
+  /* QR container / canvas */
+  #qrContainer {
+    margin-top: 16px;
+  }
+
+  #upiQr {
+    width: 200px !important;
+    height: 200px !important;
+    display: block;
+    margin: 12px auto;
+  }
+
+  /* Modal adjustments */
+  .modal {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .modal-inner {
+    width: 100%;
+    max-width: 100%;
+    padding: 18px;
+    border-radius: 16px 16px 0 0;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .modal-close {
+    right: 10px;
+    top: 8px;
+    font-size: 22px;
+  }
+
+  /* Payment grid: stacked but balanced */
+  .payment-grid {
+    display: block;
+  }
+
+  .payment-grid .methods {
+    margin-bottom: 16px;
+  }
+
+  .summary {
+    margin-top: 10px;
+    font-size: 15px;
+  }
+
+  /* Transaction table scrollable horizontally */
+  .txn-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 14px;
+  }
+
+  .txn-table th, .txn-table td {
+    padding: 10px 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Dashboard container */
+  .dashboard-wrap {
+    padding: 16px 10px;
+  }
+
+  .card {
+    padding: 16px;
+    margin-top: 16px;
+    border-radius: 14px;
+  }
+
+  /* Text and headings */
+  h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .big {
+    font-size: 22px;
+  }
+
+  .muted,
+  .status-pending {
+    font-size: 14px;
+  }
+
+  /* QR modal inputs */
+  #upiText {
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+
+  #copyUpiBtn {
+    padding: 10px;
+    min-width: 90px;
+  }
+
+  /* Method buttons cleaner spacing */
+  .method-btn {
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  /* Ensure table and modals don’t overflow the screen */
+  .modal-inner img#qrImg {
+    width: 240px !important;
+    height: 240px !important;
+    margin: 12px auto;
+    display: block;
+  }
+}

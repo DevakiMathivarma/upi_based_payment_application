@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+{% block title %}Register — GapyPay{% endblock %}
+
+{% block content %}
+<section class="card auth-card animate-up">
+  <div class="auth-split">
+    <div class="auth-visual">
+      <h2 class="hero">Create your account</h2>
+      <p class="muted">Fast OTP-based registration. Secure payments. Start accepting or sending UPI transfers.</p>
+      <div class="bubble-row">
+        <span class="bubble">UPI</span>
+        <span class="bubble">OTP</span>
+        <span class="bubble">Razorpay</span>
+      </div>
+    </div>
+
+    <div class="auth-form">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <h3 class="form-title">Sign up</h3>
+
+        {% if form.non_field_errors %}
+          <div class="form-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <label class="field">
+          <span class="label-text">Username</span>
+          {{ form.username }}
+          {% if form.username.errors %}<small class="field-error">{{ form.username.errors.0 }}</small>{% endif %}
+        </label>
+
+        <label class="field">
+          <span class="label-text">Email</span>
+          {{ form.email }}
+          {% if form.email.errors %}<small class="field-error">{{ form.email.errors.0 }}</small>{% endif %}
+        </label>
+
+        <label class="field">
+          <span class="label-text">Phone number</span>
+          {{ form.phone }}
+          {% if form.phone.errors %}<small class="field-error">{{ form.phone.errors.0 }}</small>{% endif %}
+        </label>
+
+        <div class="form-row">
+          <button class="btn btn-primary" type="submit">Create account & send OTP</button>
+          <a class="btn btn-ghost" href="{% url 'core:login' %}">Already have account?</a>
+        </div>
+
+        <p class="muted small">We will send a one-time code (OTP) to your phone. Standard SMS charges may apply.</p>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

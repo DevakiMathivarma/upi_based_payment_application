@@ -1,0 +1,349 @@
+/* styles.css - modern, responsive, animated UI */
+/* Base / reset */
+:root{
+  --bg:#0f172a;
+  --card:#0b1220;
+  --accent:#06b6d4;
+  --muted:#9aa6b2;
+  --glass: rgba(255,255,255,0.03);
+  --glass-2: rgba(255,255,255,0.02);
+  --success:#10b981;
+  --danger:#ef4444;
+  --radius:12px;
+  --container:1100px;
+  --glass-border: rgba(255,255,255,0.04);
+  --text:#e6eef6;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(6,182,212,0.06), transparent 10%),
+    linear-gradient(180deg, rgba(7,11,17,0.9), rgba(7,11,17,0.92));
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding-bottom:60px;
+}
+
+/* Container */
+.container{
+  width:94%;
+  max-width:var(--container);
+  margin:0 auto;
+}
+
+/* Header */
+.site-header{
+  backdrop-filter: blur(6px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-bottom: 1px solid var(--glass-border);
+  position:sticky;
+  top:0;
+  z-index:40;
+}
+.header-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 0;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--text);
+  text-decoration:none;
+}
+.brand-icon{ color:var(--accent); }
+.brand-text{
+  font-weight:700;
+  letter-spacing:0.2px;
+  font-size:18px;
+}
+
+/* Nav */
+.nav{ display:flex; gap:8px; align-items:center; }
+.nav-link{ color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:8px; transition:all .18s; }
+.nav-link:hover{ color:var(--text); background:var(--glass); }
+
+/* Buttons */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:10px;
+  border:0;
+  cursor:pointer;
+  font-weight:600;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background: linear-gradient(90deg,var(--accent), #7c3aed); color:#041025; box-shadow: 0 8px 30px rgba(6,182,212,0.07); }
+.btn-ghost{ background:transparent; color:var(--text); border:1px solid var(--glass-border); padding:8px 12px; }
+.btn-outline{ background:transparent; border:1px dashed var(--glass-border); color:var(--muted); padding:8px 12px; }
+
+/* Cards */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: var(--radius);
+  padding:18px;
+  border:1px solid var(--glass-border);
+  box-shadow: 0 6px 30px rgba(2,6,23,0.6);
+  margin-top:28px;
+}
+
+/* Auth split layout */
+.auth-card{
+  display:flex;
+  align-items:stretch;
+  overflow:hidden;
+  padding:0;
+}
+.auth-split{ display:flex; width:100%; gap:0; }
+.auth-visual{
+  flex:1;
+  padding:36px;
+  min-width:250px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.01));
+  border-right:1px solid var(--glass-border);
+}
+.auth-form{
+  width:420px;
+  padding:36px;
+}
+
+/* Typography inside auth */
+.hero{ margin:0 0 8px 0; font-size:24px; letter-spacing:-0.5px; color:var(--text); }
+.muted{ color:var(--muted); margin:8px 0; }
+.small{ font-size:13px; color:var(--muted); }
+
+/* Form fields */
+.field{ display:block; margin-bottom:14px; }
+.label-text{ display:block; color:var(--muted); font-size:13px; margin-bottom:6px; }
+input[type="text"], input[type="email"], input[type="password"]{
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  background:var(--glass);
+  border:1px solid rgba(255,255,255,0.03);
+  color:var(--text);
+  outline:none;
+  transition:box-shadow .12s, transform .08s;
+  font-size:15px;
+}
+input:focus{ box-shadow: 0 6px 20px rgba(6,182,212,0.06); transform:translateY(-1px); }
+
+/* form row */
+.form-row{ display:flex; gap:10px; align-items:center; margin-top:12px; }
+.field-error{ color:var(--danger); font-size:13px; margin-top:6px; display:block; }
+
+/* messages */
+.messages{ margin:12px 0; display:flex; gap:10px; flex-direction:column; }
+.msg{ padding:10px 12px; border-radius:8px; font-weight:600; }
+.msg-success{ background: rgba(16,185,129,0.08); color:var(--success); border:1px solid rgba(16,185,129,0.06); }
+.msg-error{ background: rgba(239,68,68,0.06); color:var(--danger); border:1px solid rgba(239,68,68,0.06); }
+
+/* dashboard layout */
+.dashboard-card{ padding:24px; }
+.dash-header{ border-bottom:1px dashed var(--glass-border); padding-bottom:12px; margin-bottom:14px; }
+.pill{ padding:4px 8px; border-radius:999px; background:var(--glass-2); color:var(--muted); font-weight:600; font-size:12px; }
+.pill.verified{ background: rgba(16,185,129,0.12); color:var(--success); }
+
+/* grid */
+.dash-grid{ display:grid; gap:16px; grid-template-columns: 1fr 1fr; margin-top:16px; }
+.dash-card{ background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)); padding:18px; border-radius:12px; border:1px solid var(--glass-border); }
+
+/* small decorative bits */
+.bubble-row{ margin-top:12px; display:flex; gap:8px; }
+.bubble{ background:var(--glass); padding:6px 10px; border-radius:999px; color:var(--muted); font-weight:700; font-size:13px; }
+
+/* qr decoration */
+.qr-box{ height:110px; width:110px; border-radius:12px; background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); display:flex; align-items:center; justify-content:center; margin-top:16px; }
+.qr-dot{ height:12px; width:12px; background:var(--glass-2); border-radius:3px; margin:4px; opacity:0.9; }
+.qr-dot.big{ width:36px; height:36px; border-radius:8px; }
+
+/* animations */
+@keyframes up {
+  from { transform: translateY(18px) scale(.98); opacity:0; }
+  to   { transform: translateY(0) scale(1); opacity:1; }
+}
+.animate-up{ animation: up .48s cubic-bezier(.2,.9,.3,1) both; }
+
+/* responsive */
+
+/* ---------- Small phones (roughly iPhone SE / 320–374px) ---------- */
+@media (min-width: 320px) and (max-width: 374px) {
+  :root{
+    --radius:10px;
+  }
+
+  /* container */
+  .container{ width:96%; }
+
+  /* header - compact */
+  .header-inner{ padding:10px 0; gap:8px; }
+  .brand-text{ font-size:16px; }
+  .nav-link{ padding:6px 8px; font-size:13px; }
+
+  /* auth card stacking */
+  .auth-card{ flex-direction:column; border-radius:10px; overflow:visible; }
+  .auth-split{ flex-direction:column; gap:0; }
+  .auth-visual{ display:block; padding:18px 18px 12px; border-right:0; border-bottom:1px solid var(--glass-border); min-height:unset; }
+  .auth-form{ width:100%; padding:18px; }
+
+  /* typography reductions */
+  .hero{ font-size:20px; }
+  .form-title{ font-size:16px; margin-bottom:6px; }
+  .muted, .small{ font-size:12px; }
+  
+
+  /* inputs / buttons - larger touch targets, full width */
+  input[type="text"], input[type="email"], input[type="password"],
+  input, textarea, select {
+    padding:12px;
+    font-size:15px;
+  }
+  .form-row{ flex-direction:column; gap:10px; }
+  .btn{ width:100%; justify-content:center; padding:12px 14px; border-radius:10px; }
+  .btn-ghost{ padding:10px; }
+
+  /* card spacing */
+  .card{ padding:14px; margin-top:18px; border-radius:10px; }
+
+  /* reduce dash/grid complexity */
+  .dash-grid{ grid-template-columns: 1fr; gap:12px; }
+  .dash-card{ padding:14px; }
+
+  /* minor adjustments */
+  .auth-visual .hero, .auth-visual .muted{ text-align:left; }
+}
+
+/* ---------- Slightly larger phones (375–420px) ---------- */
+@media (min-width: 374px) and (max-width: 425px) {
+ :root{
+    --radius:10px;
+  }
+
+  /* container */
+  .container{ width:96%; }
+
+  /* header - compact */
+  .header-inner{ padding:10px 0; gap:8px; }
+  .brand-text{ font-size:16px; }
+  .nav-link{ padding:6px 8px; font-size:13px; }
+
+  /* auth card stacking */
+  .auth-card{ flex-direction:column; border-radius:10px; overflow:visible; }
+  .auth-split{ flex-direction:column; gap:0; }
+  .auth-visual{ display:block; padding:18px 18px 12px; border-right:0; border-bottom:1px solid var(--glass-border); min-height:unset; }
+  .auth-form{ width:100%; padding:18px; }
+
+  /* typography reductions */
+  .hero{ font-size:20px; }
+  .form-title{ font-size:16px; margin-bottom:6px; }
+  .muted, .small{ font-size:12px; }
+  
+
+  /* inputs / buttons - larger touch targets, full width */
+  input[type="text"], input[type="email"], input[type="password"],
+  input, textarea, select {
+    padding:12px;
+    font-size:15px;
+  }
+  .form-row{ flex-direction:column; gap:10px; }
+  .btn{ width:100%; justify-content:center; padding:12px 14px; border-radius:10px; }
+  .btn-ghost{ padding:10px; }
+
+  /* card spacing */
+  .card{ padding:14px; margin-top:18px; border-radius:10px; }
+
+  /* reduce dash/grid complexity */
+  .dash-grid{ grid-template-columns: 1fr; gap:12px; }
+  .dash-card{ padding:14px; }
+
+  /* minor adjustments */
+  .auth-visual .hero, .auth-visual .muted{ text-align:left; }
+   /* still hide QR on narrow phones */
+}
+
+/* ---------- Small tablets / large phones (421–767px) ---------- */
+@media (min-width: 421px) and (max-width: 767px) {
+  :root{
+    --radius:10px;
+  }
+
+  /* container */
+  .container{ width:96%; }
+
+  /* header - compact */
+  .header-inner{ padding:10px 0; gap:8px; }
+  .brand-text{ font-size:16px; }
+  .nav-link{ padding:6px 8px; font-size:13px; }
+
+  /* auth card stacking */
+  .auth-card{ flex-direction:column; border-radius:10px; overflow:visible; }
+  .auth-split{ flex-direction:column; gap:0; }
+  .auth-visual{ display:block; padding:18px 18px 12px; border-right:0; border-bottom:1px solid var(--glass-border); min-height:unset; }
+  .auth-form{ width:100%; padding:18px; }
+
+  /* typography reductions */
+  .hero{ font-size:20px; }
+  .form-title{ font-size:16px; margin-bottom:6px; }
+  .muted, .small{ font-size:12px; }
+  
+
+  /* inputs / buttons - larger touch targets, full width */
+  input[type="text"], input[type="email"], input[type="password"],
+  input, textarea, select {
+    padding:12px;
+    font-size:15px;
+  }
+  .form-row{ flex-direction:column; gap:10px; }
+  .btn{ width:100%; justify-content:center; padding:12px 14px; border-radius:10px; }
+  .btn-ghost{ padding:10px; }
+
+  /* card spacing */
+  .card{ padding:14px; margin-top:18px; border-radius:10px; }
+
+  /* reduce dash/grid complexity */
+  .dash-grid{ grid-template-columns: 1fr; gap:12px; }
+  .dash-card{ padding:14px; }
+
+  /* minor adjustments */
+  .auth-visual .hero, .auth-visual .muted{ text-align:left; }
+   /* still hide QR on narrow phones */
+}
+
+/* ---------- Tablet / small desktop (768–1023px) ---------- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .auth-card{ flex-direction:row; }
+  .auth-visual{ flex:1; padding:32px; min-width:220px; }
+  .auth-form{ width:420px; padding:30px; }
+  .qr-box{ display:flex; } /* show QR on tablets */
+  .hero{ font-size:24px; }
+  .container{ max-width:900px; }
+}
+
+/* ---------- Desktop (1024px and up) - optional tweaks ---------- */
+@media (min-width: 1024px) {
+  .auth-card{ align-items:stretch; }
+  .auth-visual{ padding:36px; }
+  .auth-form{ padding:36px; width:420px; }
+  .container{ max-width:var(--container); }
+}
+
+@media (max-width:900px){
+  .auth-card{ flex-direction:column; }
+  .auth-form{ width:100%; }
+  .dash-grid{ grid-template-columns: 1fr; }
+}
+
+/* tiny util */
+.inline-form{ display:inline; }
+.link{ color:var(--accent); text-decoration:none; font-weight:700; }

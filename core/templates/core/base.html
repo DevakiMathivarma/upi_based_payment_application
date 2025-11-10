@@ -1,0 +1,64 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}UPI App{% endblock %}</title>
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+
+  <!-- minimal meta for mobile -->
+  <meta name="theme-color" content="#0f172a" />
+</head>
+<body class="page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{% url 'core:home' %}">
+        <!-- simple SVG brand -->
+        <svg class="brand-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <rect x="2" y="2" width="20" height="20" rx="5" fill="currentColor" opacity="0.12"/>
+          <path d="M7 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M7 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+        </svg>
+        <span class="brand-text">GapyPay</span>
+      </a>
+
+      <nav class="nav">
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'core:dashboard' %}" class="nav-link">Dashboard</a>
+          <form method="post" action="{% url 'core:logout' %}" class="inline-form">
+            {% csrf_token %}
+            <button class="btn btn-ghost" type="submit">Logout</button>
+          </form>
+        {% else %}
+          <a class="nav-link" href="{% url 'core:register' %}">Register</a>
+          <a class="nav-link" href="{% url 'core:login' %}">Login</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container main">
+    {% if messages %}
+      <div class="messages">
+        {% for m in messages %}
+          <div class="msg msg-{{ m.tags }}">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© {{ now.year }} GapyPay • Built with Django</p>
+    </div>
+  </footer>
+
+  <!-- small inline scripts for the pages; more specific JS included in templates when needed -->
+  {% block scripts %}{% endblock %}
+</body>
+</html>

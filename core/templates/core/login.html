@@ -1,0 +1,155 @@
+{% extends "core/base.html" %}
+{% block title %}Login — GapyPay{% endblock %}
+
+{% block content %}
+<section class="card auth-card animate-up">
+  <div class="auth-split">
+    <div class="auth-visual">
+      <h2 class="hero">Welcome back</h2>
+      <p class="muted">Enter the OTP sent to your phone. If you didn't receive it, resend with the button below.</p>
+      <div class="qr-box" aria-hidden>
+        <!-- decorative QR-like pattern -->
+        <div class="qr-dot"></div>
+        <div class="qr-dot big"></div>
+        <div class="qr-dot"></div>
+      </div>
+    </div>
+
+    <div class="auth-form">
+      <form method="post" id="login-form" novalidate>
+        {% csrf_token %}
+        <h3 class="form-title">Login with OTP</h3>
+
+        {% if form.non_field_errors %}
+          <div class="form-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <label class="field">
+          <span class="label-text">Username</span>
+          {{ form.username }}
+          {% if form.username.errors %}<small class="field-error">{{ form.username.errors.0 }}</small>{% endif %}
+        </label>
+
+        <label class="field">
+          <span class="label-text">OTP</span>
+          {{ form.otp }}
+          {% if form.otp.errors %}<small class="field-error">{{ form.otp.errors.0 }}</small>{% endif %}
+        </label>
+
+        <div class="form-row">
+          <button class="btn btn-primary" type="submit">Login</button>
+          <button type="button" id="resendBtn" class="btn btn-outline">Resend OTP</button>
+        </div>
+
+        <div class="muted small" id="resendInfo">
+          {% if prefill_username %}OTP was sent to the phone for <strong>{{ prefill_username }}</strong>.{% endif %}
+        </div>
+      </form>
+
+      <div class="space small">
+        <a class="link" href="{% url 'core:register' %}">Create a new account</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const resendBtn = document.getElementById('resendBtn');
+  const form = document.getElementById('login-form');
+  const resendInfo = document.getElementById('resendInfo');
+  const COOLDOWN_SECONDS = {{ RESEND_COOLDOWN|default:60 }};
+
+  function startCountdown(seconds){
+    resendBtn.disabled = true;
+    let remaining = seconds;
+    resendBtn.textContent = 'Resend (' + remaining + 's)';
+    const id = setInterval(()=> {
+      remaining--;
+      if(remaining <= 0){
+        clearInterval(id);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend OTP';
+      } else {
+        resendBtn.textContent = 'Resend (' + remaining + 's)';
+      }
+    }, 1000);
+  }
+
+  // Read csrftoken cookie (robust)
+  function getCookie(name){
+    const cookies = document.cookie ? document.cookie.split('; ') : [];
+    for (let i = 0; i < cookies.length; i++) {
+      const parts = cookies[i].split('=');
+      const key = parts.shift();
+      const val = parts.join('=');
+      if (key === name) return decodeURIComponent(val);
+    }
+    return null;
+  }
+
+  resendBtn.addEventListener('click', async function(){
+    const username = (form.querySelector('[name="username"]').value || '').trim();
+    if(!username){
+      alert('Please enter username to resend OTP.');
+      return;
+    }
+
+    const payload = new FormData();
+    payload.append('username', username);
+
+    // Use cookie value — this MUST match Django's cookie
+    const csrftoken = getCookie('csrftoken');
+    if (!csrftoken) {
+      alert('CSRF token missing in cookie. Refresh the page and try again.');
+      return;
+    }
+
+    resendBtn.disabled = true;
+    resendBtn.textContent = 'Sending...';
+
+    try {
+      const resp = await fetch("{% url 'core:resend_otp' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrftoken,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: payload,
+        credentials: 'same-origin'   // <-- MUST include cookies
+      });
+
+      if (!resp.ok) {
+        let body = null;
+        try { body = await resp.json(); } catch(e) { /* not JSON */ }
+        const msg = body && (body.message || (body.errors && JSON.stringify(body.errors))) ? (body.message || JSON.stringify(body.errors)) : `Server error (${resp.status})`;
+        alert(msg);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend OTP';
+        return;
+      }
+
+      const data = await resp.json();
+      if (data.ok) {
+        resendInfo.textContent = data.message || 'OTP resent — check your phone.';
+        startCountdown(COOLDOWN_SECONDS);
+      } else {
+        alert(data.message || 'Unable to resend OTP');
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend OTP';
+      }
+    } catch (err) {
+      console.error('Network error', err);
+      alert('Network error. Try again.');
+      resendBtn.disabled = false;
+      resendBtn.textContent = 'Resend OTP';
+    }
+  });
+})();
+</script>
+
+
+
+{% endblock %}
