@@ -26,7 +26,8 @@
         <input name="to_upi" placeholder="UPI ID or phone" class="input" required>
         <input name="amount" placeholder="Amount (INR)" class="input" required>
         <button class="btn btn-primary" type="submit">Pay</button>
-        <button id="scanQrBtn" type="button" class="btn btn-secondary">Scan QR</button>
+            <button id="scanQrBtn" type="button" class="btn btn-secondary">Scan QR</button>
+
       </form>
     </div>
   </div>
@@ -68,7 +69,7 @@
         <button class="method-btn" data-provider="phonepe">PhonePe</button>
         <button class="method-btn" data-provider="bhim">BHIM</button>
       </div>
-      <p><strong>Link:</strong> <span id="showlink"></span></p>
+              <p><strong>To:</strong> <span id="summary_to"></span></p>
 
       <div class="summary">
         <p><strong>To:</strong> <span id="summary_to"></span></p>
@@ -100,337 +101,316 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-  const e = encodeURIComponent;
+    const e = encodeURIComponent;
+    function buildUpiUri({ pa, pn, amount, tn }) {
+  return `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+}
+    function generateQrCode(text) {
+  const qrCanvas = document.getElementById("upiQr");
+  const qrContainer = document.getElementById("qrContainer");
+  qrContainer.style.display = "block";
+  const qr = new QRious({
+    element: qrCanvas,
+    value: text,
+    size: 200,
+  });
+}
 
-  function buildUpiUri({ pa, pn, amount, tn }) {
-    // amount must be a rupee string like "1" or "1.00"
-    return `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+// Handle Scan QR click
+document.getElementById("scanQrBtn").addEventListener("click", () => {
+  const form = document.getElementById("quickPayForm");
+  const to_upi = form.to_upi.value.trim();
+  const amount = form.amount.value.trim();
+
+  if (!to_upi || !amount) {
+    alert("Please fill both UPI ID and amount before generating QR.");
+    return;
   }
 
-  function generateQrCode(text) {
-    const qrCanvas = document.getElementById("upiQr");
-    const qrContainer = document.getElementById("qrContainer");
-    qrContainer.style.display = "block";
-    const qr = new QRious({
-      element: qrCanvas,
-      value: text,
-      size: 200,
-    });
-  }
-
-  // Handle Scan QR click
-  document.getElementById("scanQrBtn").addEventListener("click", () => {
-    const form = document.getElementById("quickPayForm");
-    const to_upi = form.to_upi.value.trim();
-    const amount = form.amount.value.trim();
-
-    if (!to_upi || !amount) {
-      alert("Please fill both UPI ID and amount before generating QR.");
-      return;
-    }
-
-    // Ensure amount is a valid rupee value
-    const amountRupees = Number(amount);
-    if (!isFinite(amountRupees) || amountRupees <= 0) {
-      alert("Enter a valid amount.");
-      return;
-    }
-
-    const amountStr = amountRupees.toFixed(2);
-
-    const upiLink = buildUpiUri({
-      pa: to_upi,
-      pn: "Gapy User",
-      amount: amountStr,
-      tn: "Quick Pay via Gapy",
-    });
-
-    console.log("Generated UPI URI:", upiLink);
-    generateQrCode(upiLink);
+  const upiLink = buildUpiUri({
+    pa: to_upi,
+    pn: "Gapy User",
+    amount: amount,
+    tn: "Quick Pay via Gapy",
   });
 
-  (function(){
-    /* Elements */
-    const modal = document.getElementById('paymentModal');
-    const modalClose = document.getElementById('modalClose');
-    const quickPayForm = document.getElementById('quickPayForm');
-    const summaryTo = document.getElementById('summary_to');
-    const summaryAmt = document.getElementById('summary_amt');
-    const methodButtons = document.querySelectorAll('.method-btn');
-    const showlink = document.getElementById('showlink');
-    const qrModal = document.getElementById('qrModal');
-    const qrModalClose = document.getElementById('qrModalClose');
-    const qrImg = document.getElementById('qrImg');
-    const upiText = document.getElementById('upiText');
-    const copyUpiBtn = document.getElementById('copyUpiBtn');
+  console.log("Generated UPI URI:", upiLink);
+  generateQrCode(upiLink);
+});
+(function(){
+  /* Elements */
+  const modal = document.getElementById('paymentModal');
+  const modalClose = document.getElementById('modalClose');
+  const quickPayForm = document.getElementById('quickPayForm');
+  const summaryTo = document.getElementById('summary_to');
+  const summaryAmt = document.getElementById('summary_amt');
+  const methodButtons = document.querySelectorAll('.method-btn');
+const showlink = document.getElementById('showlink');
+  const qrModal = document.getElementById('qrModal');
+  const qrModalClose = document.getElementById('qrModalClose');
+  const qrImg = document.getElementById('qrImg');
+  const upiText = document.getElementById('upiText');
+  const copyUpiBtn = document.getElementById('copyUpiBtn');
 
-    /* CSRF cookie helper */
-    function getCookie(name) {
-      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-      return v ? v.pop() : '';
-    }
-    const csrftoken_cookie = getCookie('csrftoken');
+  /* CSRF cookie helper */
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+  }
+  const csrftoken_cookie = getCookie('csrftoken');
 
-    /* Modal open/close helpers */
-    function openModal(to, amount){
-      summaryTo.textContent = to;
-      summaryAmt.textContent = amount;
-      modal.style.display = 'block';
-      modal.dataset.to = to;
-      modal.dataset.amount = amount;
-    }
-    function closeModal(){ modal.style.display = 'none'; }
+  /* Modal open/close helpers */
+  function openModal(to, amount){
+    summaryTo.textContent = to;
+    summaryAmt.textContent = amount;
+    modal.style.display = 'block';
+    modal.dataset.to = to;
+    modal.dataset.amount = amount;
+  }
+  function closeModal(){ modal.style.display = 'none'; }
 
-    modalClose.addEventListener('click', closeModal);
+  modalClose.addEventListener('click', closeModal);
 
-    quickPayForm.addEventListener('submit', async function(e){
-      e.preventDefault();
-      const to = quickPayForm.elements['to_upi'].value.trim();
-      const amount = quickPayForm.elements['amount'].value.trim();
-      if(!to || !amount) { alert('Enter recipient and amount'); return; }
-      openModal(to, amount);
+  quickPayForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const to = quickPayForm.elements['to_upi'].value.trim();
+    const amount = quickPayForm.elements['amount'].value.trim();
+    if(!to || !amount) { alert('Enter recipient and amount'); return; }
+    openModal(to, amount);
+  });
+
+  /* createOrder: POST to backend, expects JSON { ok:true, order_id, amount_paise, txn_id, message? } */
+  async function createOrder(amount, to, provider) {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value || csrftoken_cookie;
+    const fd = new FormData();
+    fd.append('amount', amount);
+    fd.append('to_upi', to);
+    fd.append('provider', provider);
+    const resp = await fetch("{% url 'core:create_order' %}", {
+      method: 'POST',
+      headers: {'X-CSRFToken': token},
+      body: fd,
+      credentials: 'same-origin'
     });
+    return resp.json();
+  }
 
-    /* createOrder: POST to backend, expects JSON { ok:true, order_id, amount_paise, txn_id, message? } */
-    async function createOrder(amount, to, provider) {
-      const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value || csrftoken_cookie;
-      const fd = new FormData();
-      fd.append('amount', amount);
-      fd.append('to_upi', to);
-      fd.append('provider', provider);
-      const resp = await fetch("{% url 'core:create_order' %}", {
-        method: 'POST',
-        headers: {'X-CSRFToken': token},
-        body: fd,
-        credentials: 'same-origin'
-      });
-      return resp.json();
-    }
+  /* Razorpay checkout handler (keeps your existing flow) */
+  async function openRazorpay(order_id, amount_paise, txn_id, name, phone){
+    const options = {
+      "key": "{{ razorpay_key_id }}",
+      "amount": amount_paise,
+      "currency": "INR",
+      "order_id": order_id,
+      "name": name || "{{ user.username }}",
+      "prefill": {
+        "name": "{{ user.username }}",
+        "email": "{{ user.email|default:'' }}",
+        "contact": "{{ user.phone_number|default:'' }}"
+      },
+      "handler": function (response){
+        const data = new FormData();
+        data.append('razorpay_payment_id', response.razorpay_payment_id);
+        data.append('razorpay_order_id', response.razorpay_order_id);
+        data.append('razorpay_signature', response.razorpay_signature);
+        data.append('txn_id', txn_id || '');
+        fetch("{% url 'core:verify_payment' %}", {
+          method: 'POST',
+          headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || csrftoken_cookie},
+          body: data,
+          credentials: 'same-origin'
+        }).then(r => r.json()).then(j => {
+          if(j.ok){
+            alert('Payment successful');
+            window.location.reload();
+          } else {
+            alert('Payment verification failed: ' + (j.message || ''));
+            window.location.reload();
+          }
+        }).catch(err => { console.error(err); alert('Verification error'); });
+      },
+      "modal": { "ondismiss": function(){ /* allow retry */ } }
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+  }
 
-    /* Razorpay checkout handler (keeps your existing flow) */
-    async function openRazorpay(order_id, amount_paise, txn_id, name, phone){
-      const options = {
-        "key": "{{ razorpay_key_id }}",
-        "amount": amount_paise,
-        "currency": "INR",
-        "order_id": order_id,
-        "name": name || "{{ user.username }}",
-        "prefill": {
-          "name": "{{ user.username }}",
-          "email": "{{ user.email|default:'' }}",
-          "contact": "{{ user.phone_number|default:'' }}"
-        },
-        "handler": function (response){
-          const data = new FormData();
-          data.append('razorpay_payment_id', response.razorpay_payment_id);
-          data.append('razorpay_order_id', response.razorpay_order_id);
-          data.append('razorpay_signature', response.razorpay_signature);
-          data.append('txn_id', txn_id || '');
-          fetch("{% url 'core:verify_payment' %}", {
-            method: 'POST',
-            headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || csrftoken_cookie},
-            body: data,
-            credentials: 'same-origin'
-          }).then(r => r.json()).then(j => {
-            if(j.ok){
-              alert('Payment successful');
-              window.location.reload();
-            } else {
-              alert('Payment verification failed: ' + (j.message || ''));
-              window.location.reload();
-            }
-          }).catch(err => { console.error(err); alert('Verification error'); });
-        },
-        "modal": { "ondismiss": function(){ /* allow retry */ } }
-      };
-      const rzp = new Razorpay(options);
-      rzp.open();
-    }
+  /* Helpers: encoding / UPI URI builders / mobile detect */
+  function e(s){ return encodeURIComponent(s || ''); }
+  function buildUpiUri({ pa, pn, amount, tn }){
+    return `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+  }
+  function buildGPayIntentUri({ pa, pn, amount, tn }){
+    console.log('coming')
+    const base = `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+    const url= `intent://${base.replace(/^upi:\/\//,'') }#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+    console.log(base)
+        console.log(url)
 
-    /* Helpers: encoding / UPI URI builders / mobile detect */
-    function e(s){ return encodeURIComponent(s || ''); }
-    function buildGPayIntentUri({ pa, pn, amount, tn }){
-      const base = `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
-      const url= `intent://${base.replace(/^upi:\/\//,'') }#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-      return url;
-    }
-    function buildPhonePeIntentUri({ pa, pn, amount, tn }) {
-      const e = encodeURIComponent;
-      const base = `pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
-      const phonepeIntent = `intent://${base}#Intent;scheme=upi;package=com.phonepe.app;end`;
-      return phonepeIntent;
-    }
-    function isMobile() {
-      try {
-        if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
-          return navigator.userAgentData.mobile;
-        }
-      } catch(e){}
-      return /Mobi|Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    }
+    return url;
+  }
+  function isMobile() {
+    try {
+      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+        return navigator.userAgentData.mobile;
+      }
+    } catch(e){}
+    return /Mobi|Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  }
 
-    /* Improved QR modal functions (robust + graceful fallback) */
-    function showQrModal(upiUri, paDisplay){
-      try {
-        const qrData = encodeURIComponent(upiUri);
-        const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${qrData}`;
+  /* Improved QR modal functions (robust + graceful fallback) */
+  function showQrModal(upiUri, paDisplay){
+    try {
+      // Build QR URL using Google Charts (ensure proper encoding)
+      const qrData = encodeURIComponent(upiUri);
+      const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${qrData}`;
 
-        qrImg.style.display = 'block';
-        qrImg.src = qrUrl;
-        upiText.style.display = 'block';
-        upiText.value = paDisplay;
-        document.getElementById('qrNote').textContent = 'Open your UPI app (GPay/PhonePe/BHIM) and scan the QR or copy the UPI ID below.';
-        qrModal.style.display = 'block';
+      // Debug logs (open console to inspect)
+      console.log('Generated UPI URI:', upiUri);
+      console.log('QR image URL:', qrUrl);
 
-        qrImg.onerror = function(ev){
-          qrImg.style.display = 'none';
-          upiText.style.display = 'block';
-          upiText.value = paDisplay;
-          document.getElementById('qrNote').textContent =
-            'QR unavailable — copy the UPI ID below and paste it in your UPI app.';
-        };
-      } catch (err) {
+      // Reset UI
+      qrImg.style.display = 'block';
+      qrImg.src = qrUrl;
+      upiText.style.display = 'block';
+      upiText.value = paDisplay;
+      document.getElementById('qrNote').textContent = 'Open your UPI app (GPay/PhonePe/BHIM) and scan the QR or copy the UPI ID below.';
+      qrModal.style.display = 'block';
+
+      // Handle image load error gracefully
+      qrImg.onerror = function(ev){
+        console.warn('QR image failed to load:', ev);
+        // hide broken image, show fallback text + message
         qrImg.style.display = 'none';
         upiText.style.display = 'block';
         upiText.value = paDisplay;
         document.getElementById('qrNote').textContent =
-          'QR generation failed — copy the UPI ID below and paste it in your UPI app.';
-        qrModal.style.display = 'block';
+          'QR unavailable — copy the UPI ID below and paste it in your UPI app.';
+      };
+    } catch (err) {
+      console.error('showQrModal error:', err);
+      // fallback UI
+      qrImg.style.display = 'none';
+      upiText.style.display = 'block';
+      upiText.value = paDisplay;
+      document.getElementById('qrNote').textContent =
+        'QR generation failed — copy the UPI ID below and paste it in your UPI app.';
+      qrModal.style.display = 'block';
+    }
+  }
+
+  function closeQrModal(){
+    qrModal.style.display = 'none';
+    // cleanup
+    qrImg.onerror = null;
+    qrImg.src = '';
+    upiText.value = '';
+    document.getElementById('qrNote').textContent = 'Open your UPI app (GPay/PhonePe/BHIM) and scan the QR or copy the UPI ID below.';
+  }
+
+  qrModalClose.addEventListener('click', closeQrModal);
+
+  copyUpiBtn.addEventListener('click', async function(){
+    try {
+      await navigator.clipboard.writeText(upiText.value);
+      copyUpiBtn.textContent = 'Copied';
+      setTimeout(()=> copyUpiBtn.textContent = 'Copy', 1500);
+    } catch (err) {
+      console.warn('Clipboard write failed, select manually:', err);
+      upiText.focus();
+      upiText.select();
+      alert('Unable to copy automatically — select and copy the UPI ID displayed.');
+    }
+  });
+
+  /* Main method button handler (Razorpay or UPI apps with fallback) */
+  methodButtons.forEach(btn => {
+    btn.addEventListener('click', async function(){
+      const provider = btn.dataset.provider;        // 'razorpay' | 'gpay' | 'phonepe' | 'bhim'
+      const to = modal.dataset.to;     
+      console.log(to)            // expected VPA like mathivarma@icici
+      const amount = modal.dataset.amount;         // e.g. "1.00"
+      const name = "{{ user.username }}";
+      const txnNotePrefix = "GapyPay";
+
+      if(!to || !to.includes('@')){
+        alert('Please enter a valid UPI ID (example: mathivarma@icici).');
+        return;
       }
-    }
 
-    function closeQrModal(){
-      qrModal.style.display = 'none';
-      qrImg.onerror = null;
-      qrImg.src = '';
-      upiText.value = '';
-      document.getElementById('qrNote').textContent = 'Open your UPI app (GPay/PhonePe/BHIM) and scan the QR or copy the UPI ID below.';
-    }
-
-    qrModalClose.addEventListener('click', closeQrModal);
-
-    copyUpiBtn.addEventListener('click', async function(){
+      let res;
       try {
-        await navigator.clipboard.writeText(upiText.value);
-        copyUpiBtn.textContent = 'Copied';
-        setTimeout(()=> copyUpiBtn.textContent = 'Copy', 1500);
+        res = await createOrder(amount, to, provider);
       } catch (err) {
-        upiText.focus();
-        upiText.select();
-        alert('Unable to copy automatically — select and copy the UPI ID displayed.');
+        console.error(err);
+        alert('Order creation failed');
+        return;
+      }
+      if(!res || !res.ok){
+        alert(res?.message || 'Order creation failed');
+        return;
+      }
+
+      if(provider === 'razorpay'){
+        await openRazorpay(res.order_id, res.amount_paise, res.txn_id);
+        return;
+      }
+
+      const tn = `${txnNotePrefix} txn:${res.txn_id || ''}`;
+      const upiUri = buildUpiUri({ pa: to, pn: name, amount, tn });
+
+      // Desktop -> show QR modal fallback
+      if(!isMobile()){
+        showQrModal(upiUri, to);
+        if(typeof closeModal === 'function') closeModal();
+        return;
+      }
+function buildPhonePeIntentUri({ pa, pn, amount, tn }) {
+  const e = encodeURIComponent;
+
+  // Base UPI parameters
+  const base = `pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+
+  // PhonePe package name: com.phonepe.app
+  const phonepeIntent = `intent://${base}#Intent;scheme=upi;package=com.phonepe.app;end`;
+
+  console.log("Generated PhonePe Intent:", phonepeIntent);
+  return phonepeIntent;
+}
+      // Mobile -> try intent/upi link
+      try {
+        if(provider === 'gpay'){
+          const gpayIntent = buildGPayIntentUri({ pa: to, pn: name, amount, tn });
+              showlink.textContent=gpayIntent;
+
+          window.location.href = gpayIntent;
+          // fallback to generic UPI URI a bit later
+          setTimeout(()=> { window.location.href = upiUri; }, 700);
+        } else {
+          window.location.href = upiUri;
+        }
+        if(typeof closeModal === 'function') closeModal();
+      } catch (err) {
+        console.error('Failed to open UPI intent:', err);
+        showQrModal(upiUri, to);
+      }
+            try {
+        if(provider === 'phonepe'){
+          const gpayIntent = buildPhonePeIntentUri({ pa: to, pn: name, amount, tn });
+          window.location.href = gpayIntent;
+          // fallback to generic UPI URI a bit later
+          setTimeout(()=> { window.location.href = upiUri; }, 700);
+        } else {
+          window.location.href = upiUri;
+        }
+        if(typeof closeModal === 'function') closeModal();
+      } catch (err) {
+        console.error('Failed to open UPI intent:', err);
+        showQrModal(upiUri, to);
       }
     });
+  });
 
-    /* Main method button handler (Razorpay or UPI apps with fallback) */
-    methodButtons.forEach(btn => {
-      btn.addEventListener('click', async function(){
-        const provider = btn.dataset.provider;        // 'razorpay' | 'gpay' | 'phonepe' | 'bhim'
-        const to = modal.dataset.to;
-        const rawAmount = modal.dataset.amount;       // e.g. "1.00" or "100"
-        const name = "{{ user.username }}";
-        const txnNotePrefix = "GapyPay";
-
-        if(!to || !to.includes('@')) {
-          alert('Please enter a valid UPI ID (example: mathivarma@icici).');
-          return;
-        }
-
-        // Validate amount and format to rupees with 2 decimals
-        const amountNum = Number(rawAmount);
-        if (!isFinite(amountNum) || amountNum <= 0) {
-          alert('Enter a valid amount.');
-          return;
-        }
-        const amountRupees = amountNum.toFixed(2); // string "1.00"
-
-        // Open popup immediately to preserve user gesture (allowed by browser)
-        let popup = null;
-        try {
-          popup = window.open('about:blank', '_blank');
-        } catch (err) {
-          popup = null;
-        }
-
-        // Create order on backend (await)
-        let res;
-        try {
-          res = await createOrder(amountRupees, to, provider);
-        } catch (err) {
-          if (popup) popup.close();
-          console.error(err);
-          alert('Order creation failed');
-          return;
-        }
-
-        if(!res || !res.ok) {
-          if (popup) popup.close();
-          alert(res?.message || 'Order creation failed');
-          return;
-        }
-
-        // If provider is razorpay -> use checkout.js in parent (no popup needed)
-        if(provider === 'razorpay') {
-          if (popup) popup.close();
-          await openRazorpay(res.order_id, res.amount_paise, res.txn_id);
-          return;
-        }
-
-        // Build note + UPI URIs
-        const tn = `${txnNotePrefix} txn:${res.txn_id || ''}`;
-        const upiUri = buildUpiUri({ pa: to, pn: name, amount: amountRupees, tn });
-
-        // Desktop -> show QR modal fallback
-        if(!isMobile()) {
-          if (popup) popup.close();
-          showQrModal(upiUri, to);
-          if(typeof closeModal === 'function') closeModal();
-          return;
-        }
-
-        // On mobile: navigate the popup (opened on user click) to intent/upi
-        try {
-          if (!popup) {
-            // If popup couldn't be opened for some reason, navigate current window as fallback
-            if (provider === 'gpay') {
-              const gpayIntent = buildGPayIntentUri({ pa: to, pn: name, amount: amountRupees, tn });
-              window.location.href = gpayIntent;
-              setTimeout(()=> { window.location.href = upiUri; }, 800);
-            } else if (provider === 'phonepe') {
-              const phonepeIntent = buildPhonePeIntentUri({ pa: to, pn: name, amount: amountRupees, tn });
-              window.location.href = phonepeIntent;
-              setTimeout(()=> { window.location.href = upiUri; }, 800);
-            } else {
-              window.location.href = upiUri;
-            }
-            if(typeof closeModal === 'function') closeModal();
-            return;
-          }
-
-          // Use popup so external app launch is considered gesture-initiated
-          if (provider === 'gpay') {
-            const gpayIntent = buildGPayIntentUri({ pa: to, pn: name, amount: amountRupees, tn });
-            showlink.textContent = gpayIntent;
-            popup.location = gpayIntent;
-            // fallback to generic UPI URI if intent fails
-            setTimeout(()=> { popup.location = upiUri; }, 800);
-          } else if (provider === 'phonepe') {
-            const phonepeIntent = buildPhonePeIntentUri({ pa: to, pn: name, amount: amountRupees, tn });
-            showlink.textContent = phonepeIntent;
-            popup.location = phonepeIntent;
-            setTimeout(()=> { popup.location = upiUri; }, 800);
-          } else {
-            popup.location = upiUri;
-          }
-
-          if(typeof closeModal === 'function') closeModal();
-        } catch (err) {
-          console.error('Failed to open UPI intent:', err);
-          if (popup) popup.close();
-          showQrModal(upiUri, to);
-        }
-      });
-    });
-
-  })();
+})();
 </script>
 {% endblock %}
