@@ -29,6 +29,10 @@
         {% if request.user.is_authenticated %}
           <a href="{% url 'core:dashboard' %}" class="nav-link">Dashboard</a>
            <a href="{% url 'core:recharge' %}">Recharge</a>
+         
+      <!-- Always forces admin login page to appear -->
+      <a class="nav-link" href="{% url 'admin:login' %}?next=/admin/">Admin</a>
+    
           <form method="post" action="{% url 'core:logout' %}" class="inline-form">
             {% csrf_token %}
             <button class="btn btn-ghost" type="submit">Logout</button>

@@ -99,9 +99,9 @@ STATIC_URL = 'static/'
 
 # Internationalization (unchanged)
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
+TIME_ZONE = 'Asia/Kolkata'   # ✅ Indian Standard Time
+USE_I18N = True               # ✅ enables internationalization
+USE_TZ = True 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -127,3 +127,29 @@ ALLOWED_HOSTS = [h.strip() for h in _raw_allowed.split(",") if h.strip()]
 # fallback to localhost if none provided (optional)
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+# # settings.py (prod)
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.example.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True           # or EMAIL_USE_SSL = True with port 465
+# EMAIL_HOST_USER = 'mathivarmaganesan@gmail.com'
+# EMAIL_HOST_PASSWORD = 'ryib qgbq lktw iwhfd'
+# DEFAULT_FROM_EMAIL = 'devakimathivarma@gmail.com'
+
+import os
+
+# --- Email (use env vars) ---
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+
+# For Gmail / general SMTP
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'   # True for port 587
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')   # e.g. "you@gmail.com"
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # store in env or secret manager
+
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@yourdomain.com')
+DEFAULT_NOTIFICATION_EMAIL = os.getenv('DEFAULT_NOTIFICATION_EMAIL', DEFAULT_FROM_EMAIL)
+
+

@@ -7,7 +7,7 @@
 
 <div class="dashboard-wrap container">
   <div class="dash-top-cards">
-    <div class="card small">
+    <!-- <div class="card small">
       <h4>Balance</h4>
       <p class="big">₹0.00</p>
       <button class="btn btn-primary" id="addMoneyBtn">Add Money</button>
@@ -17,7 +17,7 @@
       <h4>UPI ID</h4>
       <p class="muted">mathivarma@icici</p>
       <button class="btn btn-ghost" id="showQR">Show QR</button>
-    </div>
+    </div> -->
 
     <div class="card small">
       <h4>Quick Pay</h4>
@@ -26,11 +26,18 @@
         <input name="to_upi" placeholder="UPI ID or phone" class="input" required>
         <input name="amount" placeholder="Amount (INR)" class="input" required>
         <button class="btn btn-primary" type="submit">Pay</button>
-            <button id="scanQrBtn" type="button" class="btn btn-secondary">Scan QR</button>
+            <button id="scanQrBtn" type="button" class="btn btn-secondary" >Scan QR</button>
 
       </form>
     </div>
+
   </div>
+  <form id="iPaidForm" style="margin-top:10px;">
+  {% csrf_token %}
+  <label for="txnInput" style="display:block;margin-bottom:5px;">Enter Transaction ID from UPI App</label>
+  <input id="txnInput" class="input" type="text" placeholder="e.g. TXN20251112ABC123" required style="margin-bottom:10px;">
+  <button id="iPaidBtn" class="btn btn-success" type="button">I Paid</button>
+</form>
   <div id="qrContainer" style="margin-top: 15px; text-align:center; display:none;">
     <h5>Scan to Pay</h5>
     <canvas id="upiQr"></canvas>
@@ -59,25 +66,25 @@
     </div>
   </div>
 </section>
+<div id="transactionsSection">
   <div class="card">
     <h3>Recent Transactions</h3>
     <table class="txn-table">
-      <thead><tr><th>Date</th><th>To</th><th>Amount</th><th>Provider</th><th>Status</th></tr></thead>
-      <tbody>
-        {% for t in recent_txns %}
+      <thead>
         <tr>
-          <td>{{ t.created_at|date:"M d, H:i" }}</td>
-          <td>{{ t.to_upi|default:"-" }}</td>
-          <td>₹{{ t.amount }}</td>
-          <td>{{ t.provider|default:"-" }}</td>
-          <td class="status-{{ t.status|lower }}">{{ t.status }}</td>
+          <th>Date</th>
+          <th>To</th>
+          <th>Amount</th>
+          <th>Provider</th>
+          <th>Status</th>
         </tr>
-        {% empty %}
-        <tr><td colspan="5">No recent transactions</td></tr>
-        {% endfor %}
+      </thead>
+      <tbody id="txnBody">
+        <tr><td colspan="5">Loading...</td></tr>
       </tbody>
     </table>
   </div>
+</div>
 </div>
 
 <!-- Payment Modal (hidden by default) -->
@@ -124,9 +131,53 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
+    function genTxnNum() {
+    // TXN + YYYYMMDD + 6 random alnum uppercase
+    const d = new Date();
+    const yyyy = d.getFullYear().toString();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `TXN${yyyy}${mm}${dd}${rand}`;
+  }
     const e = encodeURIComponent;
-    function buildUpiUri({ pa, pn, amount, tn }) {
-  return `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+//     function buildUpiUri({ pa, pn, amount, tn }) {
+//   return `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+// }
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const resp = await fetch("{% url 'core:transactions_view' %}", {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    });
+    const data = await resp.json();
+    const tbody = document.getElementById("txnBody");
+
+    if (data.ok && data.transactions.length > 0) {
+      tbody.innerHTML = "";
+      data.transactions.forEach(t => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${t.date}</td>
+            <td>${t.to}</td>
+            <td>₹${t.amount.toFixed(2)}</td>
+            <td>${t.provider}</td>
+            <td class="status-${t.status.toLowerCase()}">${t.status}</td>
+          </tr>`;
+      });
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5">No recent transactions</td></tr>`;
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById("txnBody").innerHTML =
+      `<tr><td colspan="5">Failed to load transactions</td></tr>`;
+  }
+});
+
+function buildUpiUri({ pa, pn, amount, tn, txn_num }) {
+  var txn_num = localStorage.getItem('pending_txn');
+  const note = `${tn} | TXN: ${txn_num}`; // shows txn number in payment note
+  return `upi://pay?pa=${e(pa)}&pn=${e(note)}&tn=${e(note)}&am=${e(amount)}&cu=INR`;
 }
     function generateQrCode(text) {
   const qrCanvas = document.getElementById("upiQr");
@@ -140,26 +191,7 @@
 }
 
 // Handle Scan QR click
-document.getElementById("scanQrBtn").addEventListener("click", () => {
-  const form = document.getElementById("quickPayForm");
-  const to_upi = form.to_upi.value.trim();
-  const amount = form.amount.value.trim();
 
-  if (!to_upi || !amount) {
-    alert("Please fill both UPI ID and amount before generating QR.");
-    return;
-  }
-
-  const upiLink = buildUpiUri({
-    pa: to_upi,
-    pn: "User",
-    amount: amount,
-    tn: "From App",
-  });
-
-  console.log("Generated UPI URI:", upiLink);
-  generateQrCode(upiLink);
-});
 (function(){
   /* Elements */
   const modal = document.getElementById('paymentModal');
@@ -199,16 +231,20 @@ const showlink = document.getElementById('showlink');
     const to = quickPayForm.elements['to_upi'].value.trim();
     const amount = quickPayForm.elements['amount'].value.trim();
     if(!to || !amount) { alert('Enter recipient and amount'); return; }
+      const txnNum = genTxnNum();
+    localStorage.setItem('pending_txn', txnNum);
     openModal(to, amount);
+     modal.dataset.txn = txnNum;
   });
 
-  /* createOrder: POST to backend, expects JSON { ok:true, order_id, amount_paise, txn_id, message? } */
-  async function createOrder(amount, to, provider) {
+
+    async function createOrder(amount, to, provider, txn_num) {
     const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value || csrftoken_cookie;
     const fd = new FormData();
     fd.append('amount', amount);
     fd.append('to_upi', to);
     fd.append('provider', provider);
+    if (txn_num) fd.append('txn_num', txn_num);            // <-- new
     const resp = await fetch("{% url 'core:create_order' %}", {
       method: 'POST',
       headers: {'X-CSRFToken': token},
@@ -217,7 +253,37 @@ const showlink = document.getElementById('showlink');
     });
     return resp.json();
   }
+document.getElementById("scanQrBtn").addEventListener("click", () => {
+  const form = document.getElementById("quickPayForm");
+  const to_upi = form.to_upi.value.trim();
+  const amount = form.amount.value.trim();
 
+  if (!to_upi || !amount) {
+    alert("Please fill both UPI ID and amount before generating QR.");
+    return;
+  }
+    const txnNum = genTxnNum();
+    localStorage.setItem('pending_txn', txnNum);
+
+  const upiLink = buildUpiUri({
+    pa: to_upi,
+    pn: "User",
+    amount: amount,
+    tn: "From App",
+  });
+
+  console.log("Generated UPI URI:", upiLink);
+  generateQrCode(upiLink);
+
+        let res;
+      try {
+        res =  createOrder(amount, to_upi, "UPI",txnNum);
+      } catch (err) {
+        console.error(err);
+        alert('Order creation failed');
+        return;
+      }
+});
   /* Razorpay checkout handler (keeps your existing flow) */
   async function openRazorpay(order_id, amount_paise, txn_id, name, phone){
     const options = {
@@ -363,7 +429,7 @@ const showlink = document.getElementById('showlink');
 
       let res;
       try {
-        res = await createOrder(amount, to, provider);
+        res = await createOrder(amount, to, provider,modal.dataset.txn);
       } catch (err) {
         console.error(err);
         alert('Order creation failed');
@@ -439,6 +505,54 @@ function buildPhonePeIntentUri({ pa, pn, amount, tn }) {
 document.getElementById('goRecharge').addEventListener('click', function(){
   window.location.href = "{% url 'core:recharge' %}";
 });
+document.getElementById('iPaidBtn').addEventListener('click', async function() {
+  const txnInput = document.getElementById('txnInput').value.trim();
+  const storedTxn = localStorage.getItem('pending_txn');
+  const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+
+  if (!txnInput) {
+    alert('Please enter the Transaction ID shown in your UPI app.');
+    return;
+  }
+
+  if (!storedTxn) {
+    alert('No transaction found. Please make a payment first.');
+    return;
+  }
+
+  // verify match
+  if (txnInput !== storedTxn) {
+    alert('Transaction ID does not match the initiated payment. Please check and try again.');
+    return;
+  }
+  let txn_numb = localStorage.getItem('pending_txn');
+  // send to backend to mark paid
+  try {
+    const resp = await fetch("{% url 'core:i_paid' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': token,
+      },
+      body: JSON.stringify({ txn_numb: txnInput }),
+    });
+    const data = await resp.json();
+    if (resp.ok && data.ok) {
+      alert('Payment confirmed successfully!');
+      localStorage.removeItem('pending_txn');
+      window.location.reload();
+    } else {
+      alert(data.message || 'Failed to confirm payment.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error contacting server.');
+  }
+  loadTransactions();  
+});
+document.addEventListener("DOMContentLoaded", loadTransactions);
+
+
 </script>
 
 {% endblock %}

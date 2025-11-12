@@ -537,6 +537,7 @@ def create_order_view(request):
 
         to_upi = data.get('to_upi', '').strip() or None
         provider_pref = (data.get('provider', '') or '').strip().lower() or None
+        txn_num = request.POST.get('txn_num')
     except Exception:
         return JsonResponse({'ok': False, 'message': 'Invalid data'}, status=400)
 
@@ -549,52 +550,71 @@ def create_order_view(request):
         amount=amount,
         to_upi=to_upi,
         provider=provider_pref,
-        status=Transaction.STATUS_PENDING
+        status=Transaction.STATUS_PENDING,
+        txn_num=txn_num or None
     )
 
     # amount in paise
     amount_paise = int(amount * 100)
 
-    # If the chosen provider is razorpay, create a Razorpay order
-    if provider_pref == 'razorpay':
-        try:
-            razor_order = razorpay_client.order.create({
-                'amount': amount_paise,
-                'currency': 'INR',
-                'receipt': f"txn_{txn.id}",
-                'payment_capture': 1,
-            })
-        except Exception as e:
-            # record failure safely and return 500 (preserve original behavior)
-            _safe_mark_failed(txn, str(e))
-            return JsonResponse({'ok': False, 'message': 'Razorpay order creation failed'}, status=500)
-
-        # store razorpay order id (defensive save)
-        try:
-            txn.razorpay_order_id = razor_order.get('id') if isinstance(razor_order, dict) else None
-            txn.save(update_fields=['razorpay_order_id'])
-        except Exception:
-            try:
-                txn.save()
-            except Exception:
-                pass
-
-        return JsonResponse({
-            'ok': True,
-            'order_id': razor_order.get('id') if isinstance(razor_order, dict) else None,
-            'txn_id': txn.id,
-            'amount_paise': amount_paise
-        })
 
     # For UPI-app providers (gpay, phonepe, bhim, or unspecified), do NOT call Razorpay.
     # Return txn info so frontend can open intent or show QR (upi:// or intent://)
     return JsonResponse({
         'ok': True,
         'order_id': None,
-        'txn_id': txn.id,
+        'txn_id': txn.txn_num or txn.id,
         'amount_paise': amount_paise
     })
 
+from django.core.mail import send_mail
+
+@require_POST
+def i_paid(request):
+    """
+    Confirm payment by txn_num sent from browser localStorage.
+    Expects JSON body: {"txn_num": "TXN..."}
+    """
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+        txn_num = payload.get('txn_numb')
+    except Exception:
+        return JsonResponse({'ok': False, 'message': 'Invalid request'}, status=400)
+
+    if not txn_num:
+        return JsonResponse({'ok': False, 'message': 'Missing txn_num'}, status=400)
+
+    try:
+        txn = Transaction.objects.get(user=request.user, txn_num=txn_num, status='PENDING')
+    except Transaction.DoesNotExist:
+        return JsonResponse({'ok': False, 'message': 'Transaction not found or already processed'}, status=404)
+
+    # mark paid
+    txn.status = Transaction.STATUS_SUCCESS if hasattr(Transaction, 'STATUS_SUCCESS') else 'PAID'
+    txn.save(update_fields=['status', 'updated_at'])
+
+    # send email (customize recipients)
+    try:
+        print(settings.DEFAULT_FROM_EMAIL)
+        print(settings.DEFAULT_NOTIFICATION_EMAIL)
+        print(settings.EMAIL_HOST_PASSWORD)
+        print(settings.EMAIL_HOST_USER)
+        subject=f'Payment received: {txn.txn_num} — ₹{txn.amount}'
+        message=f'User {request.user} confirmed payment for {txn.to_upi}. Txn: {txn.txn_num}'
+        print(subject)
+        print(message)
+        res = send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.DEFAULT_NOTIFICATION_EMAIL],   # send to yourself to verify
+            fail_silently=False,
+        )
+    except Exception as e:
+        # email failure does not prevent success; report it optionally
+        return JsonResponse({'ok': False, 'message': 'Marked paid but failed to send email', 'error': str(e)}, status=500)
+
+    return JsonResponse({'ok': True, 'message': 'Marked paid'})
 
 
 @login_required
@@ -885,3 +905,37 @@ def call_recharge_provider(order: RechargeOrder):
         return {"status": outcome, "provider_txn": provider_txn, "message": "Mock response"}
     except Exception as e:
         return {"status": "PROCESSING", "provider_txn": "", "message": str(e)}
+
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Transaction
+
+@login_required
+def transactions_view(request):
+    """
+    Render dashboard with recent transactions for the logged-in user.
+    Shows the latest 20 by default.
+    """
+    print(2)
+    recent_txns = (
+        Transaction.objects
+        .filter(user=request.user)
+        .order_by('-created_at')[:20]   # latest first, limit 20
+    )
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = [
+            {
+                "date": t.created_at.strftime("%b %d, %H:%M"),
+                "to": t.to_upi or "-",
+                "amount": float(t.amount),
+                "provider": t.provider or "-",
+                "status": t.status,
+            }
+            for t in recent_txns
+        ]
+        return JsonResponse({"ok": True, "transactions": data})
+    print(recent_txns)
+    return render(request, "core/dashboard.html", {
+        'recent_txns': recent_txns
+    })
