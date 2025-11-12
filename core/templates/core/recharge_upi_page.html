@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Pay — GapyPay{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/recharge.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="pay-wrap">
+  <div class="card order-card">
+    <h3>Order Summary</h3>
+    <p><strong>Mobile:</strong> {{ order.mobile }}</p>
+    <p><strong>Amount:</strong> ₹{{ order.amount }}</p>
+    <p><strong>Order ID:</strong> {{ order.id }}</p>
+    <p><strong>Status:</strong> <span class="status">{{ order.status }}</span></p>
+  </div>
+
+  <div class="card pay-card">
+    <h3>Pay with UPI (opens GPay / PhonePe)</h3>
+    <label>Choose App (optional)</label>
+    <select id="targetApp">
+      <option value="">Open UPI chooser</option>
+      <option value="com.google.android.apps.nbu.paisa.user">GPay</option>
+      <option value="com.phonepe.app">PhonePe</option>
+    </select>
+
+    <button id="openUpi" class="btn primary btn-large">Open UPI App to Pay ₹{{ order.amount }}</button>
+
+    <div class="or">or</div>
+
+    <form id="txnForm" method="post" action="{% url 'core:submit_upi_tid' order.id %}">
+      {% csrf_token %}
+      <label>Paste UPI Transaction ID (if auto verification fails)</label>
+      <input name="upi_tid" placeholder="UPI txn id">
+      <div class="actions">
+        <button type="submit" class="btn">Submit TXN</button>
+      </div>
+    </form>
+
+    <div id="feedback" class="feedback"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const upiParams = {{ upi_params|safe }};
+
+function buildUpiUri(params) {
+  const esc = encodeURIComponent;
+  return `upi://pay?pa=${esc(params.pa)}&pn=${esc(params.pn)}&am=${esc(params.am)}&tn=${esc(params.tn)}&tid=${esc(params.tid)}&cu=${esc(params.cu)}`;
+}
+
+document.getElementById('openUpi').addEventListener('click', function(){
+  const pkg = document.getElementById('targetApp').value;
+  const uri = buildUpiUri(upiParams);
+
+  if(pkg) {
+    const without = uri.replace(/^upi:\/\//,'');
+    const intent = `intent://${without}#Intent;package=${pkg};scheme=upi;end`;
+    window.location = intent;
+    setTimeout(()=> window.location = uri, 1500);
+  } else {
+    window.location = uri;
+  }
+});
+
+// AJAX submission of TXN id
+document.getElementById('txnForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const tid = this.upi_tid.value.trim();
+  if(!tid) { alert('Enter txn id'); return; }
+  fetch("{% url 'core:recharge_upi_page' order.id %}", {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken': getCsrf()},
+    body: JSON.stringify({ upi_tid: tid })
+  }).then(r=>r.json()).then(data=>{
+    if(data.ok) {
+      document.getElementById('feedback').innerText = "TXN submitted. Processing recharge — refresh to see status.";
+      setTimeout(()=> location.reload(), 1200);
+    } else {
+      document.getElementById('feedback').innerText = "Submission failed: " + (data.error || 'unknown');
+    }
+  }).catch(err=>{
+    document.getElementById('feedback').innerText = "Network error";
+  });
+});
+</script>
+{% endblock %}

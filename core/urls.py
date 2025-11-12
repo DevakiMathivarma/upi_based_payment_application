@@ -14,4 +14,10 @@ urlpatterns = [
                      path('payments/create-order/', views.create_order_view, name='create_order'),
     path('payments/verify/', views.verify_payment_view, name='verify_payment'),
     path('payments/webhook/razorpay/', views.razorpay_webhook, name='razorpay_webhook'),
+
+    path("recharge/", views.recharge_view, name="recharge"),
+    path("recharge/create/", views.create_recharge, name="create_recharge"),
+    path("recharge/upi/<uuid:order_id>/", views.recharge_upi_page, name="recharge_upi_page"),
+    path("recharge/submit-txn/<uuid:order_id>/", views.submit_upi_tid, name="submit_upi_tid"),
+    path("api/plans/<str:operator_code>/", views.api_get_plans, name="api_get_plans"),
 ]

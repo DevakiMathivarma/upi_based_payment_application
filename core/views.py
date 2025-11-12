@@ -270,6 +270,7 @@ def resend_otp_view(request):
 @login_required
 def dashboard_view(request):
     """Simple dashboard showing masked phone and username."""
+    
     user = request.user
     phone = user.phone_number or ''
     masked = phone
@@ -722,3 +723,165 @@ def razorpay_webhook(request):
                 pass
 
     return HttpResponse(status=200)
+
+
+# recharge
+import json
+from decimal import Decimal
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.conf import settings
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import Operator, RechargePlan, RechargeOrder
+
+# ---------------- Dashboard ----------------
+def dashboard_view(request):
+    operators = Operator.objects.all()[:6]
+    recent = RechargeOrder.objects.order_by('-created_at')[:6]
+    return render(request, "core/dashboard.html", {"operators": operators, "recent": recent})
+
+# ---------------- Recharge page ----------------
+def recharge_view(request):
+    operators = Operator.objects.all().order_by("name")
+    return render(request, "core/recharge.html", {"operators": operators})
+
+# ---------------- Plans API (AJAX) ----------------
+def api_get_plans(request, operator_code):
+    try:
+        op = Operator.objects.get(code=operator_code)
+    except Operator.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Operator not found"}, status=404)
+
+    plans_qs = op.plans.all()
+    if plans_qs.exists():
+        plans = [{"id": p.id, "title": p.title, "amount": float(p.amount), "validity": p.validity, "desc": p.description} for p in plans_qs]
+        return JsonResponse({"ok": True, "plans": plans})
+    else:
+        # Fallback mock plans (replace with provider call if you prefer)
+        mock = [
+            {"id": "P100", "title": "Talktime - ₹49", "amount": 49.00, "validity": "NA", "desc": "Instant talktime"},
+            {"id": "P200", "title": "Data - ₹99", "amount": 99.00, "validity": "28 days", "desc": "1GB/day pack"},
+            {"id": "P300", "title": "Full plan - ₹199", "amount": 199.00, "validity": "56 days", "desc": "Data + calls"},
+        ]
+        return JsonResponse({"ok": True, "plans": mock})
+
+# ---------------- Create order and redirect to UPI page ----------------
+@require_POST
+def create_recharge(request):
+    mobile = request.POST.get("mobile", "").strip()
+    operator_code = request.POST.get("operator")
+    plan_id = request.POST.get("plan_id")
+    amount = request.POST.get("amount")
+
+    if not mobile or not amount:
+        return HttpResponseBadRequest("mobile and amount are required")
+
+    try:
+        amount_val = Decimal(amount)
+        if amount_val <= 0:
+            return HttpResponseBadRequest("invalid amount")
+    except:
+        return HttpResponseBadRequest("invalid amount format")
+
+    operator = Operator.objects.filter(code=operator_code).first() if operator_code else None
+    plan = RechargePlan.objects.filter(pk=plan_id).first() if plan_id else None
+
+    order = RechargeOrder.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        mobile=mobile,
+        operator=operator,
+        plan=plan,
+        amount=amount_val,
+        status="INITIATED"
+    )
+
+    return redirect(reverse("core:recharge_upi_page", kwargs={"order_id": order.id}))
+
+# ---------------- UPI page (GET shows page; POST used by AJAX to submit TXN id) ----------------
+@ensure_csrf_cookie
+def recharge_upi_page(request, order_id):
+    order = get_object_or_404(RechargeOrder, pk=order_id)
+
+    if request.method == "POST":
+        # Accept JSON { upi_tid: "..." } from frontend
+        try:
+            data = json.loads(request.body.decode())
+            tid = data.get("upi_tid")
+            if not tid:
+                return JsonResponse({"ok": False, "error": "No tid provided"}, status=400)
+            # Save tid and mark as PAID
+            order.upi_tid = tid
+            order.status = "PAID"
+            order.save()
+            # Immediately call provider to perform recharge (mocked)
+            provider_resp = call_recharge_provider(order)
+            # Update based on provider response
+            if provider_resp.get("status") == "SUCCESS":
+                order.status = "SUCCESS"
+                order.provider_txn = provider_resp.get("provider_txn", "")
+            elif provider_resp.get("status") == "FAILED":
+                order.status = "FAILED"
+                order.notes = provider_resp.get("message", "")
+            else:
+                order.status = "PROCESSING"
+                order.provider_txn = provider_resp.get("provider_txn", "")
+                order.notes = provider_resp.get("message", "")
+            order.save()
+            return JsonResponse({"ok": True, "provider": provider_resp})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+    # GET: build upi params for front-end to open
+    upi_vpa = getattr(settings, "MERCHANT_UPI", "yourmerchant@bank")
+    upi_name = getattr(settings, "MERCHANT_NAME", "GapyPay")
+    note = f"Recharge {order.mobile} order:{order.id}"
+    upi_params = {
+        "pa": upi_vpa,
+        "pn": upi_name,
+        "am": str(order.amount),
+        "tn": note,
+        "tid": str(order.id),
+        "cu": "INR",
+    }
+    return render(request, "core/recharge_upi_page.html", {"order": order, "upi_params": upi_params})
+
+# ---------------- Submit TXN via regular POST fallback (form submit) ----------------
+@require_POST
+def submit_upi_tid(request, order_id):
+    order = get_object_or_404(RechargeOrder, pk=order_id)
+    tid = request.POST.get("upi_tid", "").strip()
+    if not tid:
+        return redirect(reverse("core:recharge_upi_page", kwargs={"order_id": order.id}))
+    order.upi_tid = tid
+    order.status = "PAID"
+    order.save()
+    provider_resp = call_recharge_provider(order)
+    if provider_resp.get("status") == "SUCCESS":
+        order.status = "SUCCESS"
+        order.provider_txn = provider_resp.get("provider_txn", "")
+    elif provider_resp.get("status") == "FAILED":
+        order.status = "FAILED"
+        order.notes = provider_resp.get("message", "")
+    else:
+        order.status = "PROCESSING"
+        order.provider_txn = provider_resp.get("provider_txn", "")
+    order.save()
+    return redirect(reverse("core:recharge_upi_page", kwargs={"order_id": order.id}))
+
+# ---------------- Mock provider call ----------------
+def call_recharge_provider(order: RechargeOrder):
+    """
+    Replace this with real provider integration. For Option 1 you still need
+    a recharge provider (Roundpay/Scriza/A1Topup) to actually perform the recharge.
+    This mock simulates success/failure.
+    """
+    try:
+        import random, time
+        time.sleep(0.4)
+        outcome = random.choices(["SUCCESS", "PROCESSING", "FAILED"], weights=[0.75, 0.18, 0.07], k=1)[0]
+        provider_txn = f"MOCK{random.randint(111111,999999)}"
+        return {"status": outcome, "provider_txn": provider_txn, "message": "Mock response"}
+    except Exception as e:
+        return {"status": "PROCESSING", "provider_txn": "", "message": str(e)}

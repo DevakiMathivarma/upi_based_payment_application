@@ -1,0 +1,18 @@
+.recharge-container{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:start}
+.panel{padding:22px;border-radius:12px}
+.left-panel label{display:block;margin-top:10px;color:var(--muted);font-size:.9rem}
+.left-panel input[type="tel"], .left-panel select, .left-panel input[type="text"]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--white);margin-top:6px}
+.plans-wrap{margin-top:8px;display:flex;flex-direction:column;gap:10px}
+.plan-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);cursor:pointer;transition:transform .18s,box-shadow .18s}
+.plan-card input{width:18px;height:18px}
+.plan-card:hover{transform:translateY(-6px);box-shadow:0 14px 30px rgba(2,6,23,0.6)}
+.plan-title{font-weight:700}
+.plan-meta{color:var(--muted);font-size:.9rem;margin-top:6px}
+.actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+.loader{padding:12px;color:var(--muted)}
+.pay-wrap{display:flex;gap:18px;align-items:flex-start}
+.order-card{flex:1}
+.pay-card{width:340px}
+.or{text-align:center;margin:12px 0;color:var(--muted)}
+.feedback{margin-top:10px;color:var(--accent)}
+.status{padding:6px 8px;border-radius:8px;background:rgba(6,182,212,0.08);color:var(--accent)}

@@ -145,6 +145,19 @@
 }
 #copyUpiBtn:hover{ transform: translateY(-1px); }
 
+
+.headline{font-size:2rem;margin:6px 0}
+.sub{color:var(--muted);margin-bottom:18px}
+.cards-wrap{display:flex;gap:18px;flex-wrap:wrap}
+.card{min-width:260px}
+.recharge-card{border:2px dashed rgba(6,182,212,0.12);transition:transform .28s}
+.recharge-card:hover{transform:translateY(-8px)}
+.btn-large{padding:12px 18px;font-weight:700}
+.recent-list{list-style:none;padding:0;margin:8px 0 0}
+.recent-list li{padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02); color:var(--muted)}
+@keyframes floatIn { from{opacity:0;transform:translateY(12px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+.card{animation: floatIn .5s ease both}
+
 /* Responsive adjustments */
 @media (max-width:900px){
   .payment-grid{ flex-direction:column; gap:12px; }
@@ -159,6 +172,7 @@
 .status-success{ color:var(--success); font-weight:700; }
 .status-pending{ color:var(--muted) }
 .status-failed{ color:var(--danger); font-weight:700;}
+
 /* ---------- Very small phones (320–374px) ---------- */
 @media (min-width: 320px) and (max-width: 374px) {
   /* Layout: stack top cards vertically */

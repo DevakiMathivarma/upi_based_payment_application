@@ -112,3 +112,56 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user} — {self.message[:40]}"
+
+
+# recharge
+from django.db import models
+from django.utils import timezone
+import uuid
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class Operator(models.Model):
+    name = models.CharField(max_length=120)
+    code = models.CharField(max_length=64, unique=True)
+    circle = models.CharField(max_length=80, blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.circle})" if self.circle else self.name
+
+class RechargePlan(models.Model):
+    operator = models.ForeignKey(Operator, on_delete=models.CASCADE, related_name='plans')
+    plan_id = models.CharField(max_length=100)   # provider plan id
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    validity = models.CharField(max_length=80, blank=True)
+
+    def __str__(self):
+        return f"{self.operator.name} - {self.title} - ₹{self.amount}"
+
+class RechargeOrder(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('INITIATED', 'Initiated'),
+        ('PAID', 'Paid'),
+        ('PROCESSING', 'Processing'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    mobile = models.CharField(max_length=15)
+    operator = models.ForeignKey(Operator, null=True, blank=True, on_delete=models.SET_NULL)
+    plan = models.ForeignKey(RechargePlan, null=True, blank=True, on_delete=models.SET_NULL)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(default=timezone.now)
+    upi_tid = models.CharField(max_length=200, blank=True)
+    provider_txn = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.mobile} | ₹{self.amount} | {self.status}"

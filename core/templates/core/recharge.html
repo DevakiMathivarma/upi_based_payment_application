@@ -1,0 +1,99 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block title %}Recharge — GapyPay{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/recharge.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="recharge-container">
+  <div class="panel left-panel">
+    <h2>Mobile Recharge</h2>
+
+    <form id="rechargeForm" method="post" action="{% url 'core:create_recharge' %}">
+      {% csrf_token %}
+      <label>Mobile Number</label>
+      <input name="mobile" id="mobile" type="tel" placeholder="98XXXXXXXX" required pattern="[0-9]{10}">
+
+      <label>Operator</label>
+      <select name="operator" id="operator">
+        <option value="">-- Choose Operator --</option>
+        {% for op in operators %}
+          <option value="{{ op.code }}">{{ op.name }}{% if op.circle %} - {{ op.circle }}{% endif %}</option>
+        {% endfor %}
+      </select>
+
+      <label>Plan</label>
+      <div id="plansWrap" class="plans-wrap">
+        <div class="muted">Choose an operator to load plans</div>
+      </div>
+
+      <input type="hidden" name="plan_id" id="plan_id">
+      <input type="hidden" name="amount" id="amount">
+
+      <div class="actions">
+        <button type="submit" class="btn primary">Proceed to Pay</button>
+        <a class="btn ghost" href="{% url 'core:dashboard' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <aside class="panel right-panel">
+    <h3>How it works</h3>
+    <ol class="steps">
+      <li>Enter mobile & choose operator</li>
+      <li>Select a plan</li>
+      <li>Open GPay/PhonePe and pay (UPI link opens)</li>
+      <li>Paste UPI transaction id & we will process the recharge</li>
+    </ol>
+  </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const operatorSelect = document.getElementById('operator');
+const plansWrap = document.getElementById('plansWrap');
+const planIdInput = document.getElementById('plan_id');
+const amountInput = document.getElementById('amount');
+
+operatorSelect.addEventListener('change', function(){
+  const code = this.value;
+  if(!code) {
+    plansWrap.innerHTML = '<div class="muted">Choose an operator to load plans</div>';
+    return;
+  }
+  plansWrap.innerHTML = '<div class="loader">Loading plans...</div>';
+
+  fetch("{% url 'core:api_get_plans' 'OPCODE' %}".replace('OPCODE', encodeURIComponent(code)))
+    .then(r=>r.json())
+    .then(data=>{
+      if(!data.ok) {
+        plansWrap.innerHTML = '<div class="muted">Failed to load plans</div>';
+        return;
+      }
+      const nodes = data.plans.map(p=>{
+        return `<label class="plan-card">
+                  <input type="radio" name="plan" data-amount="${p.amount}" value="${p.id}">
+                  <div class="plan-body">
+                    <div class="plan-title">${p.title}</div>
+                    <div class="plan-desc">${p.desc || ''}</div>
+                    <div class="plan-meta">₹${p.amount} • ${p.validity || 'NA'}</div>
+                  </div>
+                </label>`;
+      }).join('');
+      plansWrap.innerHTML = nodes;
+      document.querySelectorAll('input[name="plan"]').forEach(r=>{
+        r.addEventListener('change', function(){
+          planIdInput.value = this.value;
+          amountInput.value = this.dataset.amount;
+        });
+      });
+    })
+    .catch(err=>{
+      console.error(err);
+      plansWrap.innerHTML = '<div class="muted">Network error loading plans</div>';
+    });
+});
+</script>
+{% endblock %}
