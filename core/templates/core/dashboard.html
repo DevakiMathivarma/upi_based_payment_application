@@ -36,6 +36,29 @@
     <canvas id="upiQr"></canvas>
   </div>
 </div>
+
+<!-- <section class="cards-wrap">
+  <div class="card recharge-card" id="rechargeCard">
+    <div class="card-inner">
+      <h3>Mobile Recharge</h3>
+      <p>Instant recharge for mobiles, DTH & more.</p>
+      <button class="btn primary btn-large" id="goRecharge">Go to Recharge</button>
+    </div>
+  </div>
+
+  <div class="card stats-card">
+    <div class="card-inner">
+      <h3>Recent Orders</h3>
+      <ul class="recent-list">
+        {% for o in recent %}
+          <li>{{ o.mobile }} — ₹{{ o.amount }} — <span class="muted">{{ o.status }}</span></li>
+        {% empty %}
+          <li class="muted">No recent orders</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</section> -->
   <div class="card">
     <h3>Recent Transactions</h3>
     <table class="txn-table">
@@ -129,9 +152,9 @@ document.getElementById("scanQrBtn").addEventListener("click", () => {
 
   const upiLink = buildUpiUri({
     pa: to_upi,
-    pn: "Gapy User",
+    pn: "User",
     amount: amount,
-    tn: "Quick Pay via Gapy",
+    tn: "From App",
   });
 
   console.log("Generated UPI URI:", upiLink);
@@ -380,7 +403,7 @@ function buildPhonePeIntentUri({ pa, pn, amount, tn }) {
       // Mobile -> try intent/upi link
       try {
         if(provider === 'gpay'){
-          const gpayIntent = buildGPayIntentUri({ pa: to, pn: name, amount, tn });
+          const gpayIntent = buildUpiUri({ pa: to, pn: name, amount, tn });
               showlink.textContent=gpayIntent;
 
           window.location.href = gpayIntent;
@@ -396,7 +419,7 @@ function buildPhonePeIntentUri({ pa, pn, amount, tn }) {
       }
             try {
         if(provider === 'phonepe'){
-          const gpayIntent = buildPhonePeIntentUri({ pa: to, pn: name, amount, tn });
+          const gpayIntent = buildUpiUri({ pa: to, pn: name, amount, tn });
           window.location.href = gpayIntent;
           // fallback to generic UPI URI a bit later
           setTimeout(()=> { window.location.href = upiUri; }, 700);
@@ -412,5 +435,10 @@ function buildPhonePeIntentUri({ pa, pn, amount, tn }) {
   });
 
 })();
+
+document.getElementById('goRecharge').addEventListener('click', function(){
+  window.location.href = "{% url 'core:recharge' %}";
+});
 </script>
+
 {% endblock %}
