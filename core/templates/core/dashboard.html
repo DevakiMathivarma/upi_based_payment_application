@@ -379,7 +379,7 @@ const showlink = document.getElementById('showlink');
         return;
       }
 
-      const tn = `${txnNotePrefix} txn:${res.txn_id || ''}`;
+      const tn = "Test";
       const upiUri = buildUpiUri({ pa: to, pn: name, amount, tn });
 
       // Desktop -> show QR modal fallback
