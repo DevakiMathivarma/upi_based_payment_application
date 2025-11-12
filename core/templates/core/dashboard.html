@@ -260,9 +260,9 @@ const showlink = document.getElementById('showlink');
 
   /* Helpers: encoding / UPI URI builders / mobile detect */
   function e(s){ return encodeURIComponent(s || ''); }
-  function buildUpiUri({ pa, pn, amount, tn }){
-    return `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
-  }
+  // function buildUpiUri({ pa, pn, amount, tn }){
+  //   return `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
+  // }
   function buildGPayIntentUri({ pa, pn, amount, tn }){
     console.log('coming')
     const base = `upi://pay?pa=${e(pa)}&pn=${e(pn)}&tn=${e(tn)}&am=${e(amount)}&cu=INR`;
